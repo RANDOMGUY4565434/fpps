@@ -1,22 +1,93 @@
-### AL ###
-#Template for AL projects for Dynamics 365 Business Central
-#launch.json folder
-.vscode/
-#Cache folder
-.alcache/
-#Symbols folder
-.alpackages/
-#Snapshots folder
-.snapshots/
-#Testing Output folder
-.output/
-#Extension App-file
-*.app
-#Rapid Application Development File
-rad.json
-#Translation Base-file
-*.g.xlf
-#License-file
-*.flf
-#Test results file
-TestResults.xml
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPS Shooter</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://threejs.org/examples/js/controls/PointerLockControls.js"></script>
+    <script>
+        let scene, camera, renderer, controls;
+        let bullets = [];
+        const bulletSpeed = 500;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            controls = new THREE.PointerLockControls(camera, document.body);
+            scene.add(controls.getObject());
+
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            const cube = new THREE.Mesh(geometry, material);
+            scene.add(cube);
+
+            camera.position.y = 1.5;
+
+            document.addEventListener('click', shoot);
+            document.addEventListener('keydown', onKeyDown);
+            window.addEventListener('resize', onWindowResize, false);
+
+            animate();
+        }
+
+        function shoot() {
+            const bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+            const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+            bullet.position.copy(camera.position);
+            bullet.velocity = new THREE.Vector3();
+            bullet.velocity.copy(camera.getWorldDirection(new THREE.Vector3())).multiplyScalar(bulletSpeed);
+            scene.add(bullet);
+            bullets.push(bullet);
+        }
+
+        function onKeyDown(event) {
+            switch (event.code) {
+                case 'KeyW':
+                    controls.moveForward(0.1);
+                    break;
+                case 'KeyS':
+                    controls.moveForward(-0.1);
+                    break;
+                case 'KeyA':
+                    controls.moveRight(-0.1);
+                    break;
+                case 'KeyD':
+                    controls.moveRight(0.1);
+                    break;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            bullets.forEach((bullet, index) => {
+                bullet.position.add(bullet.velocity.clone().multiplyScalar(0.016)); // Update bullet position
+                if (bullet.position.length() > 100) { // Remove bullet if it goes too far
+                    scene.remove(bullet);
+                    bullets.splice(index, 1);
+                }
+            });
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
+    </script>
+</body>
+</html>
