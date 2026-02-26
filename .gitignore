@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FPS Shooter</title>
+    <title>Simple FPS Game</title>
     <style>
-        body { margin: 0; }
+        body { margin: 0; overflow: hidden; }
         canvas { display: block; }
     </style>
 </head>
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://threejs.org/build/three.js"></script>
     <script src="https://threejs.org/examples/js/controls/PointerLockControls.js"></script>
+    <script src="https://threejs.org/examples/js/libs/dat.gui.min.js"></script>
+
     <script>
         let scene, camera, renderer, controls;
         let bullets = [];
-        const bulletSpeed = 500;
+        let enemies = [];
+        let score = 0;
 
         function init() {
             scene = new THREE.Scene();
@@ -32,12 +35,19 @@
             const cube = new THREE.Mesh(geometry, material);
             scene.add(cube);
 
-            camera.position.y = 1.5;
+            camera.position.z = 5;
 
-            document.addEventListener('click', shoot);
-            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('click', () => {
+                controls.lock();
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.code === 'Space') {
+                    shoot();
+                }
+            });
+
             window.addEventListener('resize', onWindowResize, false);
-
             animate();
         }
 
@@ -46,34 +56,16 @@
             const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
             const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
             bullet.position.copy(camera.position);
-            bullet.velocity = new THREE.Vector3();
-            bullet.velocity.copy(camera.getWorldDirection(new THREE.Vector3())).multiplyScalar(bulletSpeed);
-            scene.add(bullet);
+            bullet.velocity = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).multiplyScalar(10);
             bullets.push(bullet);
-        }
-
-        function onKeyDown(event) {
-            switch (event.code) {
-                case 'KeyW':
-                    controls.moveForward(0.1);
-                    break;
-                case 'KeyS':
-                    controls.moveForward(-0.1);
-                    break;
-                case 'KeyA':
-                    controls.moveRight(-0.1);
-                    break;
-                case 'KeyD':
-                    controls.moveRight(0.1);
-                    break;
-            }
+            scene.add(bullet);
         }
 
         function animate() {
             requestAnimationFrame(animate);
             bullets.forEach((bullet, index) => {
-                bullet.position.add(bullet.velocity.clone().multiplyScalar(0.016)); // Update bullet position
-                if (bullet.position.length() > 100) { // Remove bullet if it goes too far
+                bullet.position.add(bullet.velocity);
+                if (bullet.position.z < -10) {
                     scene.remove(bullet);
                     bullets.splice(index, 1);
                 }
